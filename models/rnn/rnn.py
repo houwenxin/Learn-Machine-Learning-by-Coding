@@ -108,7 +108,7 @@ class RNN(object):
             d_h_next = self.W_h.T @ d_a
         
         self.grads = {"d_W_x":d_W_x, "d_W_h":d_W_h, "d_W_o": d_W_o, "d_b_h": d_b_h, "d_b_o": d_b_o}
- 
+        
         return loss    
 
     def update_params(self, lr=0.1):
@@ -139,20 +139,16 @@ def generate_dataset(num_sequences=100):
     samples = []
     
     for _ in range(num_sequences): 
-        num_tokens = np.random.randint(1, 10)
-        sample = 'a ' * num_tokens + 'b ' * num_tokens + 'c'
+        num_tokens = np.random.randint(0, 5)
+        sample = 'a ' * num_tokens + 'b ' * num_tokens
         samples.append(sample)
     return samples
-
-
 
 
 
 if __name__ == "__main__":
     from utils import build_vocab, text2token, token2id, one_hot_seq
     samples = generate_dataset(100)
-
-    
 
     word2id, id2word = build_vocab(samples)
     vocab_size = len(word2id)
@@ -182,10 +178,8 @@ if __name__ == "__main__":
             #print(rnn.grads['d_W_x'])
             rnn.zero_grad()
             loss = rnn.backward(outputs, targets)
-            if np.isnan(loss):
-                print("Meet NaN loss, skip.")
-                continue
-            rnn.update_params(lr=3e-4)
+
+            rnn.update_params(lr=3e-5)
             losses.append(loss)
             #print(loss)
         print(np.array(losses).mean())

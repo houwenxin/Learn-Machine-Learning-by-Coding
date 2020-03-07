@@ -68,14 +68,18 @@ class RNN(object):
 
     def backward(self, outputs, targets):
         loss = 0.0
-
+        
         if isinstance(outputs, np.ndarray):
-            #print('here')
+            assert outputs.shape == targets.shape
+
             loss = self._cross_entropy(outputs, targets)
             d_o = outputs.copy() # Derivative of outputs.
             d_o[np.argmax(targets)] -= 1.0
-            d_o_list = [1 for _ in range(len(targets) - 1)] + [d_o]
+            #print(np.zeros_like(d_o).shape)
+            d_o_list = [np.zeros_like(d_o) for _ in range(len(self.hidden_states) - 1 - 1)] + [d_o]
+            
         elif isinstance(outputs, list):
+            assert len(outputs) == len(targets)
             d_o_list = outputs.copy() # Derivative of outputs. shape (output_dim, 1)
             for idx, out in enumerate(outputs):
                 loss += self._cross_entropy(out, targets[idx])
@@ -95,7 +99,7 @@ class RNN(object):
         d_h_next = np.zeros_like(self.hidden_states[0])
         for t in reversed(range(T)): 
             d_o = d_o_list[t]
-
+            # print(d_o.shape, self.hidden_states[t+1].T.shape)
             d_W_o += d_o @ self.hidden_states[t+1].T
             d_b_o += d_o
 
@@ -125,69 +129,3 @@ class RNN(object):
         for key in self.grads.keys():
             self.grads[key] = 0.
 
-def generate_dataset(num_sequences=100):
-    """
-    From https://github.com/nicklashansen/rnn_lstm_from_scratch/blob/master/RNN_LSTM_from_scratch.ipynb
-
-    Generates a number of sequences as our dataset.
-    
-    Args:
-     `num_sequences`: the number of sequences to be generated.
-     
-    Returns a list of sequences.
-    """
-    samples = []
-    
-    for _ in range(num_sequences): 
-        num_tokens = np.random.randint(0, 5)
-        sample = 'a ' * num_tokens + 'b ' * num_tokens
-        samples.append(sample)
-    return samples
-
-
-
-if __name__ == "__main__":
-    from utils import build_vocab, text2token, token2id, one_hot_seq
-    samples = generate_dataset(100)
-
-    word2id, id2word = build_vocab(samples)
-    vocab_size = len(word2id)
-    inputs = []
-    targets = []
-    
-    rnn = RNN(input_dim=vocab_size, output_dim=vocab_size)
-
-    test_input = text2token(samples[0])[:-1]
-    test_target = text2token(samples[0])[1:]
-    print("Test Input:", test_input)
-    print("Test Target:", test_target)
-    inputs = one_hot_seq(token2id(test_input, word2id), vocab_size)
-    outputs, hidden_states = rnn.forward(inputs)
-    test_output = [id2word[np.argmax(out)] for out in outputs]
-    print("Test Output:", test_output)
-
-    for epoch in range(1000):
-        losses = []
-        for sample in samples:
-            ids = token2id(text2token(sample), word2id)
-            inputs = one_hot_seq(ids[:-1], vocab_size)
-            targets = one_hot_seq(ids[1:], vocab_size)
-            #print(inputs[0].shape)
-            
-            outputs, hidden_states = rnn.forward(inputs)
-            #print(rnn.grads['d_W_x'])
-            rnn.zero_grad()
-            loss = rnn.backward(outputs, targets)
-
-            rnn.update_params(lr=3e-5)
-            losses.append(loss)
-            #print(loss)
-        print(np.array(losses).mean())
-    
-
-    print("Test Input:", test_input)
-    print("Test Target:", test_target)
-    inputs = one_hot_seq(token2id(test_input, word2id), vocab_size)
-    outputs, hidden_states = rnn.forward(inputs)
-    test_output = [id2word[np.argmax(out)] for out in outputs]
-    print("Test Output:", test_output)

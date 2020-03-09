@@ -25,7 +25,7 @@ class RNN(object):
         Tanh function: (e^x - e^(-x)) / (e^x + e^(-x))
         derivative: return derivative
         '''
-        x_safe = x + 1e-12 # To avoid small denominator
+        x_safe = x + 1e-12 
         f = (np.exp(x_safe) - np.exp(-x_safe)) / (np.exp(x_safe) + np.exp(-x_safe))
         return f if not derivative else 1 - f ** 2
 
@@ -37,7 +37,7 @@ class RNN(object):
         '''
         target, pred: vector of same shape (n, 1)
         '''
-        return -np.mean(target * np.log(pred + 1e-12))
+        return -np.mean(target * np.log(pred + 1e-12)) # To avoid small denominator
 
 
     def forward(self, inputs):
@@ -109,10 +109,10 @@ class RNN(object):
             d_W_h += d_a @ self.hidden_states[t].T
             d_W_x += d_a @ self.inputs[t].T
 
-            d_h_next = self.W_h.T @ d_a
+            d_h_next = self.W_h @ d_a
         
-        self.grads = {"d_W_x":d_W_x, "d_W_h":d_W_h, "d_W_o": d_W_o, "d_b_h": d_b_h, "d_b_o": d_b_o}
-        
+        #self.grads = {"d_W_x":d_W_x, "d_W_h":d_W_h, "d_W_o": d_W_o, "d_b_h": d_b_h, "d_b_o": d_b_o}
+        self.grads=dict(d_W_x=d_W_x, d_W_h=d_W_h, d_W_o=d_W_o, d_b_h=d_b_h, d_b_o=d_b_o)
         return loss    
 
     def update_params(self, lr=0.1):

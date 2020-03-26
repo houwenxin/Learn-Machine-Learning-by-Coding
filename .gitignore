@@ -1,3 +1,5 @@
-papers/*
+*.pdf
 *.csv
 *.pyc
+__pycache__
+*.txt

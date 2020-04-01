@@ -22,7 +22,7 @@ class ScaledDotProductAttention(nn.Module):
         out : tensor, shape (batch_size, n_head, seq_len_1, value_dim)
         attn_scores : tensor, shape (batch_size, n_head, seq_len_1, seq_len_2)
         '''
-        attn_scores = torch.matmul(query / self.key_dim, key.transpose(-2, -1)) # shape (batch_size, n_head, seq_len_1, seq_len_2)
+        attn_scores = torch.matmul(query / (self.key_dim ** 0.5), key.transpose(-1, -2)) # shape (batch_size, n_head, seq_len_1, seq_len_2)
 
         if mask is not None:
             mask = mask.unsqueeze(1).eq(0) # mask shape (batch_size, 1, 1, seq_len_2 == key/value len)
@@ -71,7 +71,7 @@ class MultiHeadAttention(nn.Module):
         value = self.linear_V(value).view(batch_size, n_head, seq_len_2, value_dim)
 
         out, attn_scores = self.attention(query, key, value, mask)
-        out = out.view(batch_size, seq_len_1, -1)
+        out = out.view(batch_size, seq_len_1, n_head * value_dim)
         out = self.dropout(self.linear_out(out))
         return out, attn_scores
 
